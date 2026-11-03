@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f1ea">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="description" content="在线字符计数：输入或粘贴文字，实时显示字符数，适配手机屏幕。">
+  <title>字符计数 · 实时统计输入文字</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2064%2064%27%3E%3Crect%20width%3D%2764%27%20height%3D%2764%27%20rx%3D%2714%27%20fill%3D%27%230f766e%27%2F%3E%3Ctext%20x%3D%2732%27%20y%3D%2744%27%20font-family%3D%27sans-serif%27%20font-size%3D%2730%27%20font-weight%3D%27700%27%20text-anchor%3D%27middle%27%20fill%3D%27white%27%3E%E5%AD%97%3C%2Ftext%3E%3C%2Fsvg%3E">
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --card: #ffffff;
+      --ink: #1c1917;
+      --muted: #6b645e;
+      --faint: #78716c;
+      --line: #e7e5e4;
+      --line-soft: #f5f5f4;
+      --accent: #0f766e;
+      --accent-strong: #115e59;
+      --accent-soft: #ccfbf1;
+      --accent-pale: #f0fdfa;
+      --danger: #b91c1c;
+      --radius-lg: 26px;
+      --radius-md: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+      background:
+        radial-gradient(circle at 12% 8%, rgba(15, 118, 110, 0.1), transparent 42%),
+        radial-gradient(circle at 92% 92%, rgba(217, 119, 6, 0.09), transparent 46%),
+        var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    ::selection {
+      background: var(--accent-soft);
+      color: var(--ink);
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .counter {
+      padding: clamp(22px, 6.4vw, 34px);
+      background: var(--card);
+      border: 1px solid rgba(28, 25, 23, 0.06);
+      border-radius: var(--radius-lg);
+      box-shadow:
+        0 1px 2px rgba(28, 25, 23, 0.04),
+        0 28px 60px -28px rgba(28, 25, 23, 0.28);
+    }
+
+    .head::before {
+      content: "";
+      display: block;
+      width: 76px;
+      height: 11px;
+      margin-bottom: 20px;
+      background:
+        repeating-linear-gradient(90deg, var(--accent) 0 1.5px, transparent 1.5px 25px) left bottom / 100% 11px no-repeat,
+        repeating-linear-gradient(90deg, var(--accent) 0 1px, transparent 1px 8px) left bottom / 100% 5px no-repeat,
+        linear-gradient(var(--accent), var(--accent)) left bottom / 100% 2px no-repeat;
+      opacity: 0.85;
+    }
+
+    .kicker {
+      margin: 0 0 8px;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(27px, 7.4vw, 32px);
+      font-weight: 750;
+      letter-spacing: -0.025em;
+      line-height: 1.2;
+    }
+
+    .lede {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .stat {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px 16px;
+      margin-top: 24px;
+      padding: 16px 20px 15px;
+      background: linear-gradient(135deg, #ecfdf5 0%, #f7fdfb 58%, #fafaf9 100%);
+      border: 1px solid #d7f5ec;
+      border-radius: 18px;
+    }
+
+    .stat__value {
+      margin: 0;
+      color: var(--accent-strong);
+      font-size: clamp(40px, 12vw, 54px);
+      font-weight: 750;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.045em;
+      line-height: 1;
+    }
+
+    .stat__meta {
+      flex: none;
+      padding-bottom: 3px;
+      text-align: right;
+    }
+
+    .stat__unit {
+      display: block;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1.4;
+    }
+
+    .stat__note {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .field {
+      margin-top: 22px;
+    }
+
+    .field-label {
+      display: block;
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .editor__input {
+      display: block;
+      width: 100%;
+      min-height: clamp(200px, 40vh, 300px);
+      padding: 16px 18px;
+      background: #fafaf9;
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius-md);
+      color: var(--ink);
+      font: inherit;
+      font-size: 17px;
+      line-height: 1.7;
+      outline: 0;
+      resize: vertical;
+      transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .editor__input::placeholder {
+      color: var(--faint);
+      opacity: 1;
+    }
+
+    .editor__input:focus {
+      background: var(--card);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    .editor__bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 12px;
+      margin-top: 10px;
+    }
+
+    .editor__hint {
+      margin: 0;
+      color: var(--faint);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .clear {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 18px;
+      margin-left: auto;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 650;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .clear:hover:not(:disabled) {
+      background: var(--accent-pale);
+      border-color: var(--accent);
+      color: var(--accent-strong);
+    }
+
+    .clear:active:not(:disabled) {
+      background: var(--accent-soft);
+    }
+
+    .clear:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .clear:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    .footnote {
+      margin: 14px 2px 0;
+      color: var(--faint);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .noscript {
+      margin: 12px 2px 0;
+      color: var(--danger);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 359px) {
+      .counter {
+        padding: 20px 18px;
+      }
+
+      .stat {
+        padding: 14px 16px;
+      }
+
+      .stat__value {
+        font-size: 38px;
+      }
+
+      .editor__input {
+        padding: 14px;
+      }
+
+      .editor__hint {
+        display: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="counter" aria-labelledby="page-title">
+      <header class="head">
+        <p class="kicker">文字工具</p>
+        <h1 id="page-title">字符计数</h1>
+        <p class="lede">输入或粘贴文字，字符数会实时更新。</p>
+      </header>
+
+      <div class="stat">
+        <p class="stat__value" id="char-count">0</p>
+        <p class="stat__meta">
+          <span class="stat__unit">字符</span>
+          <span class="stat__note" id="stat-note">包含空格和换行</span>
+        </p>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="text">输入文字</label>
+        <textarea
+          class="editor__input"
+          id="text"
+          name="text"
+          rows="8"
+          placeholder="在这里输入或粘贴文字…"
+          autocomplete="off"
+          autocapitalize="sentences"
+          autocorrect="off"
+          enterkeyhint="enter"
+          spellcheck="false"
+          aria-describedby="stat-note"
+        ></textarea>
+
+        <div class="editor__bar">
+          <p class="editor__hint">中文、英文和 emoji 都按字符统计。</p>
+          <button class="clear" id="clear" type="button" disabled>清空</button>
+        </div>
+      </div>
+
+      <p class="footnote">所有内容只在本地浏览器中处理，不会上传。</p>
+      <noscript>
+        <p class="noscript">需要启用 JavaScript 才能实时统计字符数。</p>
+      </noscript>
+      <p class="sr-only" id="count-status" role="status">字符数：0</p>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var textarea = document.getElementById("text");
+      var countEl = document.getElementById("char-count");
+      var clearButton = document.getElementById("clear");
+      var statusEl = document.getElementById("count-status");
+      var segmenter = null;
+
+      try {
+        if (typeof Intl !== "undefined" && typeof Intl.Segmenter === "function") {
+          segmenter = new Intl.Segmenter("zh", { granularity: "grapheme" });
+        }
+      } catch (error) {
+        segmenter = null;
+      }
+
+      function countCharacters(value) {
+        if (!value) {
+          return 0;
+        }
+        if (segmenter) {
+          return Array.from(segmenter.segment(value)).length;
+        }
+        return Array.from(value).length;
+      }
+
+      function render() {
+        var value = textarea.value;
+        var count = countCharacters(value);
+        countEl.textContent = String(count);
+        statusEl.textContent = "字符数：" + count;
+        clearButton.disabled = value.length === 0;
+      }
+
+      textarea.addEventListener("input", render);
+
+      clearButton.addEventListener("click", function () {
+        textarea.value = "";
+        render();
+        textarea.focus();
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
