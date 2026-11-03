@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="一个简易的 Markdown 实时预览页面，支持桌面与手机屏幕。">
+  <title>Markdown 预览</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">M</span>
+      <div class="brand-text">
+        <h1>Markdown 预览</h1>
+        <p>左侧输入，右侧实时渲染</p>
+      </div>
+    </div>
+    <button id="clear-button" class="clear-button" type="button" disabled>
+      <svg class="clear-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        aria-hidden="true">
+        <path d="M3 6h18"></path>
+        <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path>
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+        <path d="M10 11v6"></path>
+        <path d="M14 11v6"></path>
+      </svg>
+      清空
+    </button>
+  </header>
+
+  <main class="workspace">
+    <section class="pane" aria-labelledby="editor-title">
+      <div class="pane-head">
+        <h2 id="editor-title">Markdown</h2>
+        <span id="char-count" class="pane-meta">0 字</span>
+      </div>
+      <label class="sr-only" for="markdown-input">Markdown 文本</label>
+      <textarea id="markdown-input" spellcheck="false" autocomplete="off"
+        autocapitalize="off" placeholder="# 你好，世界&#10;&#10;在这里输入 Markdown，右侧会实时显示渲染结果。"></textarea>
+    </section>
+
+    <section class="pane" aria-labelledby="preview-title">
+      <div class="pane-head">
+        <h2 id="preview-title">预览</h2>
+        <span class="pane-meta status"><span class="status-dot" aria-hidden="true"></span>实时</span>
+      </div>
+      <article id="preview" class="markdown-body"></article>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    支持标题、列表、引用、代码、表格、链接等常用语法
+  </footer>
+
+  <script src="markdown.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
